@@ -133,6 +133,7 @@
       <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">📋 품목별 현황</button>
       <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">📊 거래처별 통계</button>
       <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">📖 사용자 가이드</button>
+      <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">📦 재고현황</button>
     </div>
     <div class="flex items-center gap-2 pb-0.5 flex-wrap justify-end">
       <input class="fi w-28" id="searchCode" placeholder="자재코드" oninput="applyFilters()">
@@ -563,6 +564,45 @@
     </div>
   </div>
 
+  <!-- 탭4: 재고현황 -->
+  <div id="tab4Content" class="hidden bg-white rounded-b-xl rounded-tr-xl border border-amber-200 p-5 shadow-sm">
+
+    <!-- 상단 필터 + 새로고침 -->
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <select id="invGrp2" class="fi" onchange="applyInvFilter()"><option value="">자재그룹2 전체</option></select>
+      <select id="invGrp3" class="fi" onchange="applyInvFilter()"><option value="">자재그룹3 전체</option></select>
+      <select id="invGrp4" class="fi" onchange="applyInvFilter()"><option value="">자재그룹4 전체</option></select>
+      <button onclick="clearInvFilter()" class="px-3 py-1.5 text-xs rounded-lg bg-amber-100 text-amber-800 font-medium hover:bg-amber-200">초기화</button>
+      <button onclick="loadInventory()" class="px-3 py-1.5 text-xs rounded-lg font-semibold text-white" style="background:#D97706">🔄 새로고침</button>
+      <span id="invLastUpdate" class="text-xs text-stone-400 ml-1"></span>
+    </div>
+
+    <!-- 요약 카드 -->
+    <div id="invSummaryCards" class="flex gap-3 mb-4 flex-wrap"></div>
+
+    <!-- 로딩/에러 메시지 -->
+    <div id="invMsg" class="text-center py-8 text-stone-400 text-sm">탭을 클릭하면 자동으로 불러옵니다.</div>
+
+    <!-- 테이블 -->
+    <div class="tbl-wrap" id="invTableWrap" style="display:none">
+      <table class="sticky-tbl">
+        <thead>
+          <tr>
+            <th class="text-left" style="min-width:90px;position:sticky;left:0;background:#FFFBEB;z-index:11">자재번호</th>
+            <th class="text-left" style="min-width:200px">자재내역</th>
+            <th class="text-center" style="min-width:90px">자재그룹2</th>
+            <th class="text-center" style="min-width:90px">자재그룹3</th>
+            <th class="text-center" style="min-width:90px">자재그룹4</th>
+            <th class="text-center" style="min-width:80px;background:#EFF6FF;color:#1D4ED8">CJ재고</th>
+            <th class="text-center" style="min-width:80px;background:#F0FDF4;color:#166534">논산재고</th>
+            <th class="text-center" style="min-width:80px;background:#FEF3C7;color:#92400E;font-weight:700">합계</th>
+          </tr>
+        </thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div><!-- /dashboard -->
 
 <script>
@@ -878,7 +918,7 @@ function setProduct(code, init=false){
   if(!it)return;
   document.getElementById('acInput').value=it.name;
   const mg=S.mgmt.find(m=>m.code===code)||{};
-  const prodReq=it.salesPlan>0 ? Math.max(0, it.salesPlan*2 - it.npsStock) : null;
+  const prodReq=it.salesPlan>0 ? Math.ceil(Math.max(0, it.salesPlan*2 - it.npsStock) / 100) * 100 : null;
 
   document.getElementById('cName').textContent=it.name;
   document.getElementById('cBrand').textContent=(mg.brand||it.category)+(mg.factory?' · '+mg.factory+' 생산':'');
@@ -1077,8 +1117,8 @@ function renderProdTable(){
         vb=(S.mgmt.find(m=>m.code===b.code)||{}).brand||'';
       }
       if(S.sortCol==='prodReq'){
-        va=a.salesPlan>0?Math.max(0,a.salesPlan*2-a.npsStock):-Infinity;
-        vb=b.salesPlan>0?Math.max(0,b.salesPlan*2-b.npsStock):-Infinity;
+        va=a.salesPlan>0?Math.ceil(Math.max(0,a.salesPlan*2-a.npsStock)/100)*100:-Infinity;
+        vb=b.salesPlan>0?Math.ceil(Math.max(0,b.salesPlan*2-b.npsStock)/100)*100:-Infinity;
       }
       if(va==null)va=-Infinity;if(vb==null)vb=-Infinity;
       return(va<vb?-1:va>vb?1:0)*S.sortDir;
@@ -1089,7 +1129,7 @@ function renderProdTable(){
   body.innerHTML=items.map(it=>{
     const mg=S.mgmt.find(m=>m.code===it.code)||{};
     const disc=mg.discontinued?`<span class="badge" style="background:#FEE2E2;color:#991B1B;font-size:10px">단종</span>`:'';
-    const prodReq=it.salesPlan>0?Math.max(0,it.salesPlan*2-it.npsStock):null;
+    const prodReq=it.salesPlan>0?Math.ceil(Math.max(0,it.salesPlan*2-it.npsStock)/100)*100:null;
     const planTxt=it.salesPlan>0?nFmt(it.salesPlan):'-';
     const reqTxt=prodReq!=null?nFmt(prodReq):'-';
     const reqCls=prodReq!=null&&prodReq>0?'req-cell':'';
@@ -1152,10 +1192,189 @@ function switchTab(n){
   document.getElementById('tab1Content').classList.toggle('hidden',n!==1);
   document.getElementById('tab2Content').classList.toggle('hidden',n!==2);
   document.getElementById('tab3Content').classList.toggle('hidden',n!==3);
+  document.getElementById('tab4Content').classList.toggle('hidden',n!==4);
   document.getElementById('tabBtn1').classList.toggle('active',n===1);
   document.getElementById('tabBtn2').classList.toggle('active',n===2);
   document.getElementById('tabBtn3').classList.toggle('active',n===3);
+  document.getElementById('tabBtn4').classList.toggle('active',n===4);
   document.querySelectorAll('.tab2only').forEach(el=>{el.style.display=n===1?'':'none';});
+  if(n===4 && !_invLoaded) loadInventory();
+}
+
+// ═══ 재고현황 탭 ═══
+const INV_CSV_CJ     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMOdir1wnM3T6F8ubCGY00jRTCNG3cVVqlcSjZ8GPOSKlmuuxfWylwREIXCAe6elgoOUdBDdqs4KGD/pub?gid=0&single=true&output=csv';
+const INV_CSV_NONSAN = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMOdir1wnM3T6F8ubCGY00jRTCNG3cVVqlcSjZ8GPOSKlmuuxfWylwREIXCAe6elgoOUdBDdqs4KGD/pub?gid=1504680053&single=true&output=csv';
+const INV_CSV_MASTER = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMOdir1wnM3T6F8ubCGY00jRTCNG3cVVqlcSjZ8GPOSKlmuuxfWylwREIXCAe6elgoOUdBDdqs4KGD/pub?gid=2035075689&single=true&output=csv';
+
+let _invLoaded = false;
+let _invAll = [];     // 전체 데이터
+let _invFiltered = []; // 필터 적용 데이터
+
+// CSV 파서 (따옴표 처리 포함)
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.replace(/\r/g, '').split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    row.push(cur.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+// 숫자 파싱 (쉼표 포함)
+const toNum = v => parseInt(String(v||'').replace(/,/g,'')) || 0;
+
+async function loadInventory() {
+  _invLoaded = false;
+  document.getElementById('invMsg').textContent = '데이터를 불러오는 중...';
+  document.getElementById('invMsg').style.display = 'block';
+  document.getElementById('invTableWrap').style.display = 'none';
+  document.getElementById('invSummaryCards').innerHTML = '';
+
+  try {
+    const [cjText, nonsanText, masterText] = await Promise.all([
+      fetch(INV_CSV_CJ).then(r=>{ if(!r.ok) throw new Error('CJ재고 로드 실패'); return r.text(); }),
+      fetch(INV_CSV_NONSAN).then(r=>{ if(!r.ok) throw new Error('논산재고 로드 실패'); return r.text(); }),
+      fetch(INV_CSV_MASTER).then(r=>{ if(!r.ok) throw new Error('자재마스터 로드 실패'); return r.text(); }),
+    ]);
+
+    // CJ재고: 헤더있음, 상품코드=idx2, 출고가능=idx9, 동일코드 합산
+    const cjRows = parseCSV(cjText);
+    const cjMap = {};
+    for (let i = 1; i < cjRows.length; i++) {
+      const r = cjRows[i];
+      const code = String(r[2]||'').trim();
+      if (!code) continue;
+      cjMap[code] = (cjMap[code]||0) + toNum(r[9]);
+    }
+
+    // 논산재고: 헤더없음, 자재번호=idx0, 수량=idx3, 동일코드 합산
+    const nonsanRows = parseCSV(nonsanText);
+    const nonsanMap = {};
+    for (let i = 0; i < nonsanRows.length; i++) {
+      const r = nonsanRows[i];
+      const code = String(r[0]||'').trim();
+      if (!code || isNaN(Number(code))) continue; // 코드가 숫자가 아닌 헤더행 제외
+      nonsanMap[code] = (nonsanMap[code]||0) + toNum(r[3]);
+    }
+
+    // 자재마스터: 헤더있음, 자재번호=idx0, 자재내역=idx1, 그룹2=idx2, 그룹3=idx3, 그룹4=idx4
+    const masterRows = parseCSV(masterText);
+    _invAll = [];
+    for (let i = 1; i < masterRows.length; i++) {
+      const r = masterRows[i];
+      const code = String(r[0]||'').trim();
+      if (!code) continue;
+      const cj = cjMap[code] || 0;
+      const nonsan = nonsanMap[code] || 0;
+      _invAll.push({
+        code,
+        name:  r[1]||'',
+        grp2:  r[2]||'',
+        grp3:  r[3]||'',
+        grp4:  r[4]||'',
+        cj,
+        nonsan,
+        total: cj + nonsan,
+      });
+    }
+
+    // 필터 옵션 빌드
+    buildInvFilterOpts();
+
+    // 업데이트 시각
+    const now = new Date();
+    document.getElementById('invLastUpdate').textContent =
+      `최종 업데이트: ${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    _invLoaded = true;
+    _invFiltered = [..._invAll];
+    document.getElementById('invMsg').style.display = 'none';
+    document.getElementById('invTableWrap').style.display = '';
+    renderInvTable();
+
+  } catch(e) {
+    document.getElementById('invMsg').textContent = '⚠️ 데이터 로드 실패: ' + e.message;
+    console.error(e);
+  }
+}
+
+function buildInvFilterOpts() {
+  const grp2s = [...new Set(_invAll.map(r=>r.grp2).filter(Boolean))].sort();
+  const grp3s = [...new Set(_invAll.map(r=>r.grp3).filter(Boolean))].sort();
+  const grp4s = [...new Set(_invAll.map(r=>r.grp4).filter(Boolean))].sort();
+  const fill = (id, opts, label) => {
+    const el = document.getElementById(id);
+    el.innerHTML = `<option value="">${label} 전체</option>` +
+      opts.map(v=>`<option value="${v}">${v}</option>`).join('');
+  };
+  fill('invGrp2', grp2s, '자재그룹2');
+  fill('invGrp3', grp3s, '자재그룹3');
+  fill('invGrp4', grp4s, '자재그룹4');
+}
+
+function applyInvFilter() {
+  const g2 = document.getElementById('invGrp2').value;
+  const g3 = document.getElementById('invGrp3').value;
+  const g4 = document.getElementById('invGrp4').value;
+  _invFiltered = _invAll.filter(r =>
+    (!g2 || r.grp2 === g2) &&
+    (!g3 || r.grp3 === g3) &&
+    (!g4 || r.grp4 === g4)
+  );
+  renderInvTable();
+}
+
+function clearInvFilter() {
+  ['invGrp2','invGrp3','invGrp4'].forEach(id => document.getElementById(id).value = '');
+  _invFiltered = [..._invAll];
+  renderInvTable();
+}
+
+function renderInvTable() {
+  const data = _invFiltered;
+
+  // 요약 카드
+  const totalCJ     = data.reduce((s,r)=>s+r.cj,0);
+  const totalNonsan = data.reduce((s,r)=>s+r.nonsan,0);
+  const totalAll    = totalCJ + totalNonsan;
+  const withStock   = data.filter(r=>r.total>0).length;
+  document.getElementById('invSummaryCards').innerHTML = [
+    ['품목 수', data.length + '개', '#FEF3C7', '#92400E'],
+    ['재고있는 품목', withStock + '개', '#FEF3C7', '#92400E'],
+    ['CJ 재고 합계', nFmt(totalCJ), '#EFF6FF', '#1D4ED8'],
+    ['논산 재고 합계', nFmt(totalNonsan), '#F0FDF4', '#166534'],
+    ['전체 합계', nFmt(totalAll), '#FFFBEB', '#D97706'],
+  ].map(([lbl,val,bg,color])=>
+    `<div class="icard text-center" style="min-width:100px;flex:1;background:${bg}">
+      <p class="text-xs font-medium mb-0.5" style="color:${color}">${lbl}</p>
+      <p class="font-bold text-lg" style="color:${color}">${val}</p>
+    </div>`
+  ).join('');
+
+  // 테이블 바디
+  document.getElementById('invBody').innerHTML = data.map(r => {
+    const totCls = r.total === 0 ? 'color:#A8A29E' : r.total < 100 ? 'color:#C2410C;font-weight:700' : 'color:#92400E;font-weight:700';
+    return `<tr class="hover:brightness-95">
+      <td style="position:sticky;left:0;z-index:5;background:white;min-width:90px;font-size:11px">${r.code}</td>
+      <td style="min-width:200px;font-size:12px">${r.name}</td>
+      <td class="text-center text-xs text-stone-500">${r.grp2}</td>
+      <td class="text-center text-xs text-stone-500">${r.grp3}</td>
+      <td class="text-center text-xs text-stone-500">${r.grp4}</td>
+      <td class="text-center" style="background:#EFF6FF;color:#1D4ED8;font-weight:${r.cj>0?'600':'400'}">${r.cj>0?nFmt(r.cj):'-'}</td>
+      <td class="text-center" style="background:#F0FDF4;color:#166534;font-weight:${r.nonsan>0?'600':'400'}">${r.nonsan>0?nFmt(r.nonsan):'-'}</td>
+      <td class="text-center" style="background:#FEF3C7;${totCls}">${r.total>0?nFmt(r.total):'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ═══ 비밀번호 ═══
