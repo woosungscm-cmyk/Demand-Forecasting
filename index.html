@@ -474,10 +474,87 @@
         </div>
       </section>
 
-      <!-- 5. 공유용 저장 -->
+      <!-- 5. 재고현황 탭 -->
       <section>
         <h3 class="text-base font-bold text-amber-900 mb-4 flex items-center gap-2">
           <span class="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style="background:#D97706">5</span>
+          📦 재고현황 탭
+        </h3>
+        <p class="text-sm text-stone-600 mb-4">구글시트와 연동하여 CJ(경산)·논산 창고의 실시간 재고를 품목별로 한눈에 확인하는 화면입니다. 페이지 새로고침 없이 구글시트가 갱신되면 <b>🔄 새로고침</b> 버튼 클릭만으로 최신 데이터를 불러옵니다.</p>
+
+        <div class="space-y-4">
+          <!-- 데이터 출처 -->
+          <div class="rounded-xl p-4" style="border:1px solid #BFDBFE;background:#EFF6FF">
+            <p class="text-xs font-bold text-blue-900 mb-2">① 데이터 출처 (구글시트 3종)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-stone-700">
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #DBEAFE">
+                <p class="font-bold text-blue-800 mb-1">🏭 CJ 재고 (경산)</p>
+                <p class="text-stone-600">상품코드 기준 출고가능 수량을 합산</p>
+              </div>
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #DBEAFE">
+                <p class="font-bold text-blue-800 mb-1">🏠 논산 재고</p>
+                <p class="text-stone-600">자재번호 기준 수량 합산</p>
+              </div>
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #DBEAFE">
+                <p class="font-bold text-blue-800 mb-1">📋 자재 마스터</p>
+                <p class="text-stone-600">자재번호·자재명·그룹2/3/4 정보 제공</p>
+              </div>
+            </div>
+            <p class="text-xs text-blue-700 mt-2">※ 구글시트를 공개(게시)로 설정해야 자동으로 불러올 수 있습니다.</p>
+          </div>
+
+          <!-- 컬럼 설명 -->
+          <div class="rounded-xl p-4" style="border:1px solid #FDE68A;background:#FFFBEB">
+            <p class="text-xs font-bold text-amber-900 mb-2">② 컬럼 설명</p>
+            <div class="overflow-auto rounded-lg" style="border:1px solid #FDE68A">
+              <table class="w-full text-xs" style="border-collapse:collapse">
+                <thead><tr style="background:#FEF3C7"><th class="text-left px-3 py-2 text-amber-900">컬럼</th><th class="text-left px-3 py-2 text-amber-900">설명</th></tr></thead>
+                <tbody>
+                  <tr style="border-top:1px solid #FEF3C7"><td class="px-3 py-2 font-medium text-stone-700">자재번호</td><td class="px-3 py-2 text-stone-600">SAP 자재 코드 (마스터 기준)</td></tr>
+                  <tr style="border-top:1px solid #FEF3C7;background:#FAFAFA"><td class="px-3 py-2 font-medium text-stone-700">자재명</td><td class="px-3 py-2 text-stone-600">제품 명칭</td></tr>
+                  <tr style="border-top:1px solid #FEF3C7"><td class="px-3 py-2 font-medium text-stone-700">자재그룹2/3/4</td><td class="px-3 py-2 text-stone-600">제품 분류 계층 (필터 기준)</td></tr>
+                  <tr style="border-top:1px solid #FEF3C7;background:#FAFAFA"><td class="px-3 py-2 font-medium text-stone-700">CJ재고(경산)</td><td class="px-3 py-2 text-stone-600">CJ 물류창고 출고가능 수량 합계</td></tr>
+                  <tr style="border-top:1px solid #FEF3C7"><td class="px-3 py-2 font-medium text-stone-700">논산재고</td><td class="px-3 py-2 text-stone-600">논산 창고 보유 수량 합계</td></tr>
+                  <tr style="border-top:1px solid #FEF3C7;background:#FAFAFA"><td class="px-3 py-2 font-medium font-bold text-amber-900">합계</td><td class="px-3 py-2 text-stone-600">CJ재고 + 논산재고 총합</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 필터 및 검색 -->
+          <div class="rounded-xl p-4" style="border:1px solid #D1FAE5;background:#F0FDF4">
+            <p class="text-xs font-bold text-green-900 mb-2">③ 검색 및 필터 사용법</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-stone-700">
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #D1FAE5">
+                <p class="font-bold text-green-800 mb-1">🔍 자재명 검색</p>
+                <p>검색창에 글자를 입력하면 자재명에 해당 글자가 포함된 품목만 실시간으로 필터링됩니다.</p>
+                <p class="text-stone-400 mt-1">예) "독무대" 입력 → 독무대 제품 전체 표시</p>
+              </div>
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #D1FAE5">
+                <p class="font-bold text-green-800 mb-1">📂 그룹 필터</p>
+                <p>자재그룹2·3·4 드롭다운을 선택하면 해당 그룹 내 품목만 표시됩니다. 복수 그룹 필터를 동시에 적용할 수 있습니다.</p>
+              </div>
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #D1FAE5">
+                <p class="font-bold text-green-800 mb-1">📦 재고있는 품목만 / 전체보기</p>
+                <p>기본값은 <b>재고있는 품목만</b> (합계 &gt; 0). 버튼 클릭으로 <b>전체보기</b>로 전환하면 재고 없는 품목도 포함됩니다.</p>
+              </div>
+              <div class="rounded-lg p-3" style="background:white;border:1px solid #D1FAE5">
+                <p class="font-bold text-green-800 mb-1">🔄 새로고침</p>
+                <p>구글시트 내용이 업데이트된 경우, 새로고침 버튼을 클릭하면 최신 재고 데이터를 다시 불러옵니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg p-3 text-xs text-amber-800" style="background:#FFFBEB;border-left:3px solid #F59E0B">
+            💡 <b>자동 연동:</b> 재고현황 탭은 구글시트 CSV를 실시간으로 불러오므로 별도 파일 업로드 없이 구글시트 수정 → 새로고침 클릭만으로 항상 최신 재고를 확인할 수 있습니다.
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. 공유용 저장 -->
+      <section>
+        <h3 class="text-base font-bold text-amber-900 mb-4 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style="background:#D97706">6</span>
           공유용 저장 및 배포
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -504,10 +581,10 @@
         </div>
       </section>
 
-      <!-- 6. FAQ -->
+      <!-- 7. FAQ -->
       <section class="pb-4">
         <h3 class="text-base font-bold text-amber-900 mb-4 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style="background:#D97706">6</span>
+          <span class="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style="background:#D97706">7</span>
           자주 묻는 질문
         </h3>
         <div class="space-y-3">
@@ -569,10 +646,12 @@
 
     <!-- 상단 필터 + 새로고침 -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <input id="invSearch" class="fi w-44" placeholder="자재명 검색" oninput="applyInvFilter()">
       <select id="invGrp2" class="fi" onchange="applyInvFilter()"><option value="">자재그룹2 전체</option></select>
       <select id="invGrp3" class="fi" onchange="applyInvFilter()"><option value="">자재그룹3 전체</option></select>
       <select id="invGrp4" class="fi" onchange="applyInvFilter()"><option value="">자재그룹4 전체</option></select>
       <button onclick="clearInvFilter()" class="px-3 py-1.5 text-xs rounded-lg bg-amber-100 text-amber-800 font-medium hover:bg-amber-200">초기화</button>
+      <button id="invStockToggle" onclick="toggleInvStock()" class="px-3 py-1.5 text-xs rounded-lg font-semibold text-white" style="background:#059669">📦 재고있는 품목만</button>
       <button onclick="loadInventory()" class="px-3 py-1.5 text-xs rounded-lg font-semibold text-white" style="background:#D97706">🔄 새로고침</button>
       <span id="invLastUpdate" class="text-xs text-stone-400 ml-1"></span>
     </div>
@@ -1207,8 +1286,9 @@ const INV_CSV_NONSAN = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMOdir1
 const INV_CSV_MASTER = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMOdir1wnM3T6F8ubCGY00jRTCNG3cVVqlcSjZ8GPOSKlmuuxfWylwREIXCAe6elgoOUdBDdqs4KGD/pub?gid=2035075689&single=true&output=csv';
 
 let _invLoaded = false;
-let _invAll = [];     // 전체 데이터
+let _invAll = [];      // 전체 데이터
 let _invFiltered = []; // 필터 적용 데이터
+let _invStockOnly = true; // 기본: 재고있는 품목만
 
 // CSV 파서 (따옴표 처리 포함)
 function parseCSV(text) {
@@ -1297,6 +1377,8 @@ async function loadInventory() {
       `최종 업데이트: ${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
     _invLoaded = true;
+    _invStockOnly = true; // 로드 시 재고있는 품목만으로 초기화
+    updateInvToggleBtn();
     _invFiltered = [..._invAll];
     document.getElementById('invMsg').style.display = 'none';
     document.getElementById('invTableWrap').style.display = '';
@@ -1323,10 +1405,12 @@ function buildInvFilterOpts() {
 }
 
 function applyInvFilter() {
+  const q  = (document.getElementById('invSearch').value || '').trim().toLowerCase();
   const g2 = document.getElementById('invGrp2').value;
   const g3 = document.getElementById('invGrp3').value;
   const g4 = document.getElementById('invGrp4').value;
   _invFiltered = _invAll.filter(r =>
+    (!q  || (r.name || '').toLowerCase().includes(q)) &&
     (!g2 || r.grp2 === g2) &&
     (!g3 || r.grp3 === g3) &&
     (!g4 || r.grp4 === g4)
@@ -1335,22 +1419,41 @@ function applyInvFilter() {
 }
 
 function clearInvFilter() {
-  ['invGrp2','invGrp3','invGrp4'].forEach(id => document.getElementById(id).value = '');
+  ['invSearch','invGrp2','invGrp3','invGrp4'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   _invFiltered = [..._invAll];
   renderInvTable();
 }
 
-function renderInvTable() {
-  const data = _invFiltered;
+function toggleInvStock() {
+  _invStockOnly = !_invStockOnly;
+  updateInvToggleBtn();
+  renderInvTable();
+}
 
-  // 요약 카드
-  const totalCJ     = data.reduce((s,r)=>s+r.cj,0);
-  const totalNonsan = data.reduce((s,r)=>s+r.nonsan,0);
+function updateInvToggleBtn() {
+  const btn = document.getElementById('invStockToggle');
+  if (!btn) return;
+  if (_invStockOnly) {
+    btn.textContent = '📦 재고있는 품목만';
+    btn.style.background = '#059669';
+  } else {
+    btn.textContent = '📋 전체보기';
+    btn.style.background = '#6B7280';
+  }
+}
+
+function renderInvTable() {
+  const data = _invStockOnly ? _invFiltered.filter(r => r.total > 0) : _invFiltered;
+
+  // 요약 카드 (필터 적용 기준 전체)
+  const base        = _invFiltered;
+  const totalCJ     = base.reduce((s,r)=>s+r.cj,0);
+  const totalNonsan = base.reduce((s,r)=>s+r.nonsan,0);
   const totalAll    = totalCJ + totalNonsan;
-  const withStock   = data.filter(r=>r.total>0).length;
+  const withStock   = base.filter(r=>r.total>0).length;
   document.getElementById('invSummaryCards').innerHTML = [
-    ['품목 수', data.length + '개', '#FEF3C7', '#92400E'],
-    ['재고있는 품목', withStock + '개', '#FEF3C7', '#92400E'],
+    ['전체 품목', base.length + '개', '#FEF3C7', '#92400E'],
+    ['재고있는 품목', withStock + '개 (표시: ' + data.length + '개)', '#FEF3C7', '#92400E'],
     ['CJ 재고 합계', nFmt(totalCJ), '#EFF6FF', '#1D4ED8'],
     ['논산 재고 합계', nFmt(totalNonsan), '#F0FDF4', '#166534'],
     ['전체 합계', nFmt(totalAll), '#FFFBEB', '#D97706'],
