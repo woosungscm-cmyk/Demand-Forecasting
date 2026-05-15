@@ -1016,11 +1016,11 @@
 
     <!-- 발주긴급/발주검토 알림 바 -->
     <div id="petAlertBar" style="display:none;background:#FFF1F2;border:1px solid #FECACA;border-radius:10px;padding:10px 14px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){const l=document.getElementById('petAlertList');const t=document.getElementById('petAlertToggle');const open=l.classList.toggle('hidden');t.textContent=open?'▼ 펼치기':'▲ 접기';})()">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){const l=document.getElementById('petAlertList');const t=document.getElementById('petAlertToggle');const isHidden=l.style.display==='none';l.style.display=isHidden?'flex':'none';t.textContent=isHidden?'▲ 접기':'▼ 펼치기';})()">
         <span style="font-size:12px;font-weight:700;color:#DC2626">🚨 발주긴급 <span id="petAlertUrgentCnt" style="background:#DC2626;color:white;border-radius:10px;padding:0 6px">0</span>건 &nbsp;⚠️ 발주검토 <span id="petAlertOrderCnt" style="background:#D97706;color:white;border-radius:10px;padding:0 6px">0</span>건</span>
         <span id="petAlertToggle" style="font-size:11px;color:#DC2626">▼ 펼치기</span>
       </div>
-      <div id="petAlertList" class="hidden" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px"></div>
+      <div id="petAlertList" style="display:none;margin-top:8px;flex-wrap:wrap;gap:5px"></div>
     </div>
 
     <!-- 로딩/메시지 -->
@@ -1060,6 +1060,10 @@
           <span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:12px;background:#F97316;border-radius:2px;display:inline-block"></span>가을(9,10,11)</span>
         </div>
         <button onclick="document.getElementById('petChartSection').style.display='none';_petSelectedCode=null" style="padding:4px 10px;border-radius:6px;font-size:11px;background:#F5F5F4;border:1px solid #E5E5E5;cursor:pointer;color:#78716C">✕ 닫기</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <span id="petChartMaxDate" style="font-size:11px;color:#D97706;font-weight:600;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:2px 8px"></span>
+        <span style="font-size:10px;color:#A8A29E;margin-left:6px">※ 전체 매출 CSV 기준 — 이후 매출 없음을 의미</span>
       </div>
       <div style="position:relative;height:220px"><canvas id="petChart"></canvas></div>
     </div>
@@ -1748,6 +1752,7 @@ let _invClassFilter = null;   // null=전체, '무매출'|'정상재고'|'부진
 // 용품관리 탭 상태
 let _petLoaded = false;
 let _petSalesMap = {};      // { code: { 'yyyy-mm': qty } }
+let _petMaxDate  = '';      // 전체 매출 CSV 기준 최종 대금청구일
 let _petMasterSeason = {};  // { code: seasonClass } F열
 let _petItems = [];         // processed item list
 let _petProcure = {};       // { code: K_text } from Excel upload
@@ -2428,16 +2433,19 @@ async function loadPetTab() {
       };
     }
 
-    // 판매 CSV 파싱 → _petSalesMap
+    // 판매 CSV 파싱 → _petSalesMap + 전체 최종 매출일 추적
     _petSalesMap = {};
+    _petMaxDate  = '';
     const salesRows = parseCSV(salesText);
     for (let i=1;i<salesRows.length;i++) {
-      const r = salesRows[i];
+      const r    = salesRows[i];
       const code = String(r[6]||'').trim(); if(!code)continue;
-      const mon  = String(r[5]||'').trim().slice(0,7); if(!mon.match(/^\d{4}-\d{2}/))continue;
+      const date = String(r[5]||'').trim().slice(0,10); // yyyy-mm-dd
+      const mon  = date.slice(0,7); if(!mon.match(/^\d{4}-\d{2}/))continue;
       const qty  = parseFloat(String(r[11]||'').replace(/,/g,''))||0;
       if(!_petSalesMap[code]) _petSalesMap[code]={};
       _petSalesMap[code][mon]=(_petSalesMap[code][mon]||0)+qty;
+      if(date > _petMaxDate) _petMaxDate = date; // 전체 기준 최종 매출일
     }
 
     // 상품기준분류 옵션 채우기
@@ -2663,6 +2671,9 @@ function renderPetChart(code) {
   if (!item) return;
 
   document.getElementById('petChartTitle').textContent = `📈 ${item.name} — 월별 판매 추이`;
+  // 전체 최종 매출일 표기 (해당 품목 기준이 아닌 전체 CSV 기준)
+  const maxDateEl = document.getElementById('petChartMaxDate');
+  if (maxDateEl) maxDateEl.textContent = _petMaxDate ? `매출 데이터 최종일: ${_petMaxDate}` : '';
 
   const byMonth = item.salesByMonth;
   const allMonths = Object.keys(byMonth).sort();
