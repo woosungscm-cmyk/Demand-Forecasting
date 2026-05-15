@@ -2417,6 +2417,15 @@ async function loadPetTab() {
 
     // 자재마스터 파싱 (F열: 용품 계절성 분류)
     const masterRows = parseCSV(masterText);
+    // ── DEBUG: 마스터 CSV 컬럼 구조 확인 ──────────────────────────────
+    if (masterRows.length > 1) {
+      const dbgR = masterRows[1];
+      console.log('[Master CSV] 헤더행:', masterRows[0]);
+      console.log('[Master CSV] 첫번째 데이터 컬럼수:', dbgR.length);
+      console.log('[Master CSV] r[8](I열)=', dbgR[8], '  r[9](J열)=', dbgR[9]);
+      for (let ci=0; ci<dbgR.length; ci++) console.log(`  idx${ci}:`, dbgR[ci]);
+    }
+    // ─────────────────────────────────────────────────────────────────
     _petMasterSeason = {};
     const masterInfo = {}; // code -> { name, grp2, grp3, grp4, prevSales }
     for (let i=1;i<masterRows.length;i++) {
@@ -2430,6 +2439,7 @@ async function loadPetTab() {
         grp4:      r[4]||'',
         prevSales: toNum(r[6]),
         iCol:      String(r[8]||'').trim(),   // I열, index 8
+        procure:   String(r[9]||'').trim(),   // J열, index 9: 입고예정일/특이사항
       };
     }
 
@@ -2548,7 +2558,7 @@ function buildPetItems(masterInfo, stockMap) {
       daysYoy,
       urgentFlag,
       orderFlag,
-      procure:      _petProcure[code]  || '',
+      procure:      info.procure || '',
       impact:       calcImpactMonths(byMonth),
       salesByMonth: byMonth,
     });
