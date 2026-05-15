@@ -5,6 +5,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <style>
     body{background:#FFFDF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif}
     .tbl-wrap{overflow:auto;border-radius:10px;border:1px solid #FDE68A}
@@ -719,9 +720,13 @@
     <!-- 날짜 비교 + 새로고침 -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-semibold text-stone-500">기준일</span>
-      <select id="invFromDate" class="fi" onchange="renderInvComparison()"><option value="">날짜 선택</option></select>
+      <button id="invFromDateBtn" onclick="openInvCalendar('from')" class="fi" style="min-width:115px;cursor:pointer;display:flex;align-items:center;gap:5px;background:white">
+        <span>📅</span><span id="invFromDateLabel" style="color:#1D4ED8;font-weight:600">날짜 선택</span>
+      </button>
       <span class="text-xs font-semibold text-stone-500">비교일</span>
-      <select id="invToDate" class="fi" onchange="renderInvComparison()"><option value="">날짜 선택</option></select>
+      <button id="invToDateBtn" onclick="openInvCalendar('to')" class="fi" style="min-width:115px;cursor:pointer;display:flex;align-items:center;gap:5px;background:white">
+        <span>📅</span><span id="invToDateLabel" style="color:#166534;font-weight:600">날짜 선택</span>
+      </button>
       <button onclick="loadInventory()" class="px-3 py-1.5 text-xs rounded-lg font-semibold text-white" style="background:#D97706">🔄 새로고침</button>
       <span id="invLastUpdate" class="text-xs text-stone-400 ml-1"></span>
     </div>
@@ -756,6 +761,40 @@
       </table>
     </div>
   </div>
+
+<!-- 재고현황 달력 피커 모달 -->
+<div id="invCalModal" onclick="if(event.target===this)closeInvCalendar()" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.35);align-items:center;justify-content:center">
+  <div onclick="event.stopPropagation()" style="background:white;border-radius:18px;padding:20px 18px;width:300px;box-shadow:0 12px 40px rgba(0,0,0,0.25)">
+    <!-- 모달 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button onclick="invCalNav(-1)" style="padding:5px 10px;border-radius:8px;background:#FEF3C7;border:none;cursor:pointer;font-size:14px;color:#92400E">◀</button>
+      <div style="text-align:center">
+        <p id="invCalTypeLabel" style="font-size:10px;color:#6B7280;margin-bottom:1px"></p>
+        <p id="invCalTitle" style="font-weight:700;font-size:14px;color:#78350F"></p>
+      </div>
+      <button onclick="invCalNav(1)" style="padding:5px 10px;border-radius:8px;background:#FEF3C7;border:none;cursor:pointer;font-size:14px;color:#92400E">▶</button>
+    </div>
+    <!-- 요일 헤더 -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+      <div style="text-align:center;font-size:10px;color:#EF4444;font-weight:600">일</div>
+      <div style="text-align:center;font-size:10px;color:#6B7280;font-weight:600">월</div>
+      <div style="text-align:center;font-size:10px;color:#6B7280;font-weight:600">화</div>
+      <div style="text-align:center;font-size:10px;color:#6B7280;font-weight:600">수</div>
+      <div style="text-align:center;font-size:10px;color:#6B7280;font-weight:600">목</div>
+      <div style="text-align:center;font-size:10px;color:#6B7280;font-weight:600">금</div>
+      <div style="text-align:center;font-size:10px;color:#3B82F6;font-weight:600">토</div>
+    </div>
+    <!-- 날짜 그리드 -->
+    <div id="invCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+    <!-- 범례 -->
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #FEF3C7;display:flex;gap:10px;justify-content:center;font-size:10px;color:#78716C">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FEF9C3;border:1px solid #FDE68A;vertical-align:middle;margin-right:3px"></span>로그 있음</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#DBEAFE;vertical-align:middle;margin-right:3px"></span>기준~비교 범위</span>
+    </div>
+    <!-- 닫기 -->
+    <button onclick="closeInvCalendar()" style="margin-top:10px;width:100%;padding:7px;border-radius:8px;background:#F5F5F4;border:none;cursor:pointer;font-size:12px;color:#57534E">닫기</button>
+  </div>
+</div>
 
 </div><!-- /dashboard -->
 
@@ -1367,6 +1406,11 @@ let _invFiltered = []; // 필터 적용 데이터
 let _invStockOnly = true; // 기본: 재고있는 품목만
 let _logData  = {};   // { 'yyyy-mm-dd': { code: { cj, nonsan, total } } }
 let _logDates = [];   // 날짜 오름차순 정렬
+let _invFromDateVal = '';
+let _invToDateVal   = '';
+let _invCalType     = 'from';
+let _invCalYear     = new Date().getFullYear();
+let _invCalMonth    = new Date().getMonth();
 let _invChartAmt    = null;
 let _invChartDays   = null;
 let _invClassFilter = null;   // null=전체, '무매출'|'정상재고'|'부진재고'|'장기화재고'
@@ -1494,20 +1538,86 @@ function buildLogData(logText) {
   _logDates = Object.keys(_logData).sort();
 }
 
-function populateLogDateSelects() {
-  const fromSel = document.getElementById('invFromDate');
-  const toSel   = document.getElementById('invToDate');
-  if (!fromSel || !toSel) return;
-  const opts = _logDates.map(d => `<option value="${d}">${d}</option>`).join('');
-  fromSel.innerHTML = '<option value="">기준일 선택</option>' + opts;
-  toSel.innerHTML   = '<option value="">비교일 선택</option>' + opts;
-  if (_logDates.length >= 2) {
-    fromSel.value = _logDates[_logDates.length - 2];
-    toSel.value   = _logDates[_logDates.length - 1];
-  } else if (_logDates.length === 1) {
-    fromSel.value = _logDates[0];
-    toSel.value   = _logDates[0];
+function openInvCalendar(type) {
+  _invCalType = type;
+  const cur = type === 'from' ? _invFromDateVal : _invToDateVal;
+  const ref = cur || (_logDates.length ? _logDates[_logDates.length - 1] : null);
+  if (ref) {
+    _invCalYear  = parseInt(ref.slice(0, 4));
+    _invCalMonth = parseInt(ref.slice(5, 7)) - 1;
   }
+  document.getElementById('invCalTypeLabel').textContent = type === 'from' ? '기준일 선택' : '비교일 선택';
+  renderInvCal();
+  const modal = document.getElementById('invCalModal');
+  modal.style.display = 'flex';
+}
+
+function closeInvCalendar() {
+  document.getElementById('invCalModal').style.display = 'none';
+}
+
+function invCalNav(dir) {
+  _invCalMonth += dir;
+  if (_invCalMonth < 0)  { _invCalMonth = 11; _invCalYear--; }
+  if (_invCalMonth > 11) { _invCalMonth = 0;  _invCalYear++; }
+  renderInvCal();
+}
+
+function renderInvCal() {
+  const year = _invCalYear, month = _invCalMonth;
+  document.getElementById('invCalTitle').textContent = `${year}년 ${month + 1}월`;
+  const logSet    = new Set(_logDates);
+  const firstDay  = new Date(year, month, 1).getDay();
+  const lastDay   = new Date(year, month + 1, 0).getDate();
+  const fromD     = _invFromDateVal;
+  const toD       = _invToDateVal;
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= lastDay; d++) {
+    const ds     = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const hasLog = logSet.has(ds);
+    const isFrom = ds === fromD;
+    const isTo   = ds === toD;
+    const inRng  = fromD && toD && ds > fromD && ds < toD;
+    let bg = '#F9FAFB', col = '#D1D5DB', fw = '400', cur = 'default', brd = '1px solid transparent';
+    if (hasLog) { bg = '#FFFBEB'; col = '#92400E'; fw = '600'; cur = 'pointer'; brd = '1px solid #FDE68A'; }
+    if (inRng && hasLog) { bg = '#DBEAFE'; col = '#1D4ED8'; brd = '1px solid #BFDBFE'; }
+    if (isFrom) { bg = '#2563EB'; col = 'white'; fw = '700'; brd = '1px solid #1D4ED8'; cur = 'pointer'; }
+    if (isTo)   { bg = '#16A34A'; col = 'white'; fw = '700'; brd = '1px solid #15803D'; cur = 'pointer'; }
+    const click = hasLog ? `selectInvDate('${ds}')` : '';
+    html += `<div onclick="${click}" style="text-align:center;padding:6px 2px;border-radius:7px;font-size:12px;background:${bg};color:${col};font-weight:${fw};cursor:${cur};border:${brd};position:relative;line-height:1.2">
+      ${d}${hasLog ? `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:${isFrom||isTo?'white':'#D97706'};display:block"></span>` : ''}
+    </div>`;
+  }
+  document.getElementById('invCalGrid').innerHTML = html;
+}
+
+function selectInvDate(ds) {
+  if (_invCalType === 'from') {
+    _invFromDateVal = ds;
+    const lbl = document.getElementById('invFromDateLabel');
+    if (lbl) lbl.textContent = ds;
+  } else {
+    _invToDateVal = ds;
+    const lbl = document.getElementById('invToDateLabel');
+    if (lbl) lbl.textContent = ds;
+  }
+  closeInvCalendar();
+  renderInvComparison();
+}
+
+function populateLogDateSelects() {
+  if (_logDates.length >= 2) {
+    _invFromDateVal = _logDates[_logDates.length - 2];
+    _invToDateVal   = _logDates[_logDates.length - 1];
+  } else if (_logDates.length === 1) {
+    _invFromDateVal = _logDates[0];
+    _invToDateVal   = _logDates[0];
+  }
+  const fromLbl = document.getElementById('invFromDateLabel');
+  const toLbl   = document.getElementById('invToDateLabel');
+  if (fromLbl) fromLbl.textContent = _invFromDateVal || '날짜 선택';
+  if (toLbl)   toLbl.textContent   = _invToDateVal   || '날짜 선택';
 }
 
 function daysFmt(v) {
@@ -1527,8 +1637,8 @@ function diffBadge(val, unit) {
 function renderInvComparison() {
   if (!_invLoaded) return;
 
-  const fromDate = document.getElementById('invFromDate') ? document.getElementById('invFromDate').value : '';
-  const toDate   = document.getElementById('invToDate')   ? document.getElementById('invToDate').value   : '';
+  const fromDate = _invFromDateVal;
+  const toDate   = _invToDateVal;
   const q  = (document.getElementById('invSearch').value || '').trim().toLowerCase();
   const g2 = document.getElementById('invGrp2').value;
   const g3 = document.getElementById('invGrp3').value;
